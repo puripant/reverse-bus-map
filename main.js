@@ -1,3 +1,5 @@
+const debug = false;
+
 const files = ['data/stop_list.json', 'data/bangkok.json'];
 let promises = [];
 files.forEach((url) => {
@@ -11,8 +13,28 @@ let svg = d3.select('svg')
   .attr('height', height);
 
 Promise.all(promises).then((data) => {
-  let stop_list = data[0];
+  let stops = data[0];
   let bangkok = data[1];
+
+  let busses = {}
+  stops.forEach((stop) => {
+    stop.bus_ids.forEach((bus_id) => {
+      if (bus_id in busses) {
+        busses[bus_id].push(stop.id);
+      } else {
+        busses[bus_id] = [stop.id];
+      }
+    });
+  });
+  stops.forEach((stop, i) => {
+    let stop_set = new Set()
+    stop.bus_ids.forEach((bus_id) => {
+      busses[bus_id].forEach((stop_id) => {
+        stop_set.add(stop_id);
+      });
+    });
+    stops[i].stop_reaches = stop_set;
+  });
 
   let projection = d3.geoMercator()
     .fitSize([width, height], bangkok);
@@ -26,60 +48,84 @@ Promise.all(promises).then((data) => {
       .attr('fill', '#ccc')
       .attr('d', path);
 
-  const projected = stop_list.map(d => projection([d.longitude, d.latitude]));
-  let delaunay = d3.Delaunay.from(projected);
+  const projected_stops = stops.map(d => projection([d.longitude, d.latitude]));
+  let delaunay = d3.Delaunay.from(projected_stops);
   let voronoi = delaunay.voronoi([0, 0, width, height]);
-  let cells = stop_list.map((d, i) => [d, voronoi.cellPolygon(i)]);
+  let cells = stops.map((d, i) => [d, voronoi.cellPolygon(i)]);
 
   // voronoi
-  cells.forEach((cell, i) => {
-    if (cell[1]) {
-      svg.append('path')
-        .classed(`voronoi`, true)
-        .classed(`voronoi-${i}`, true)
-        .attr('fill', 'none')
-        // .attr('fill', (Math.abs(d3.polygonArea(cell[1])) > 200) ? '#900' : 'none')
-        .attr('opacity', 0.1)
-        .attr('stroke', 'none')
-        .attr('stroke-width', 0.5)
-        .attr('d', `M${cell[1].join(' ')}Z`);
-    }
-  });
-  svg.append('path')
-    .attr('fill', 'none')
-    .attr('stroke', '#eee')
-    .attr('stroke-width', 0.5)
-    .attr('d', voronoi.render());
+  if (debug) {
+    cells.forEach((cell, i) => {
+      if (cell[1]) {
+        svg.append('path')
+          .classed(`voronoi`, true)
+          .classed(`voronoi-${i}`, true)
+          .attr('fill', 'none')
+          // .attr('fill', (Math.abs(d3.polygonArea(cell[1])) > 200) ? '#900' : 'none')
+          .attr('opacity', 0.1)
+          .attr('stroke', 'none')
+          .attr('stroke-width', 0.5)
+          .attr('d', `M${cell[1].join(' ')}Z`);
+      }
+    });
+    svg.append('path')
+      .attr('fill', 'none')
+      .attr('stroke', '#eee')
+      .attr('stroke-width', 0.5)
+      .attr('d', voronoi.render());
+  }
   
   // bus stops
-  svg.append('path')
-    .attr('d', delaunay.renderPoints(null, 1));
-  // svg.selectAll('.marker')
-  //   .data(stop_list)
-  //   .enter().append('circle')
-  //     .classed('marker', true)
-  //     .attr('fill', '#ff0000')
-  //     .attr('r', 1)
-  //     .attr('transform', (d) => {
-  //       let p = projection([d.longitude, d.latitude]);
-  //       return `translate(${p[0]},${p[1]})`;
-  //     });
+  // svg.append('path')
+  //   .attr('d', delaunay.renderPoints(null, 1));
+  svg.selectAll('.stop')
+    .data(stops)
+    .enter().append('circle')
+      .classed('stop', true)
+      .attr('id', (d) => `stop-${d.id}`)
+      .attr('fill', '#000')
+      .attr('r', 1)
+      // .attr('r', d => Math.sqrt(d.bus_ids.length)/2)
+      // .attr('r', d => Math.sqrt(d.stop_reaches.size)/10)
+      .attr('transform', (d, i) => `translate(${projected_stops[i][0]},${projected_stops[i][1]})`);
 
   // voronoi interaction
   svg.on("mousemove", (event) => {
     const [mx, my] = d3.pointer(event);
     const p = delaunay.find(mx, my);
-    svg.selectAll('.voronoi')
-      .attr('fill', 'none');
-    svg.select(`.voronoi-${p}`)
-      .attr('fill', '#090');
 
-    let neighbors = [...voronoi.neighbors(p)];
-    neighbors.forEach((n) => {
-      svg.select(`.voronoi-${n}`)
-        .attr('fill', '#009');
-    });
+    if (debug) {
+      svg.selectAll('.voronoi')
+        .attr('fill', 'none');
+      svg.select(`.voronoi-${p}`)
+        .attr('fill', '#090');
+
+      let neighbors = [...voronoi.neighbors(p)];
+      neighbors.forEach((n) => {
+        svg.select(`.voronoi-${n}`)
+          .attr('fill', '#009');
+      });
+    }
+
     // TODO check if neighbors are within range
-    // Math.hypot(projected[n][0] - projected[p][0], projected[n][0] - projected[p][1]) < radius
+    // let stop = projected_stops[p];
+    // let neighbor = projected_stops[n];
+    // Math.hypot(neighbor[0] - stop[0], neighbor[0] - stop[1]) < radius
+
+    svg.selectAll('.stop')
+      .attr('stroke', 'none')
+      .attr('fill', '#000')
+      .attr('r', 1);
+    stops[p].stop_reaches.forEach((stop_id) => {
+      svg.select(`#stop-${stop_id}`)
+        .attr('fill', '#E60268')
+        .attr('r', 2);
+    });
+    svg.select(`#stop-${stops[p].id}`)
+      .raise()
+      .attr('stroke', '#fff')
+      .attr('fill', '#E60268')
+      .attr('r', 5);
+    console.log(`ป้ายรถเมล์ ${stops[p].stop_name} มีรถเมล์ผ่าน ${stops[p].bus_ids.length} สาย ไปได้ ${stops[p].stop_reaches.size} ป้าย`);
   })
 });
