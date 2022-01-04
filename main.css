@@ -1,0 +1,70 @@
+body {
+  margin: 0 auto;
+  max-width: 1000px;
+  display: block;
+  font-family: sans-serif;
+  font-size: 10px;
+}
+
+#header {
+  width: 100%;
+  height: 150px;
+  margin: 0 auto;
+  font-size: 1.5em;
+}
+.title {
+  font-family: 'Chonburi', sans-serif;
+  font-size: 2em;
+}
+#main {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.logos {
+  width: 49%;
+  height: 150px;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+}
+.logo {
+  position: relative;
+  display: inline-block;
+  height: 100px;
+  line-height: 150px;
+  vertical-align: middle;
+  background-size: cover;
+  background-repeat:no-repeat;
+  background-position: center center;
+}
+.logo a span {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+.right {
+  justify-content: flex-end;
+}
+.spacer {
+  width: 10px;
+}
+.mayday {
+  background-image: url('images/logo_mayday1@2x.png');
+  background-color: #f9dc61;
+  width: 50px;
+  height: 50px;
+}
+.boonmeelab {
+  background-image: url('images/logo_boonmeelab_small.png');
+  width: 50px;
+  height: 50px;
+}
+.ted {
+  background-image: url('images/logo-tedxbangkoklogo.png');
+  width: 125px;
+  height: 32px;
+}
