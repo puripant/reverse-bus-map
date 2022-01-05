@@ -149,13 +149,17 @@ Promise.all(promises).then((data) => {
       .attr('r', 1)
       // .attr('r', d => Math.sqrt(d.bus_ids.length)/2)
       // .attr('r', d => Math.sqrt(d.stop_reaches.size)/10)
-      .attr('transform', (d, i) => `translate(${projected_stops[i][0]},${projected_stops[i][1]})`);
+      .attr('transform', (d, i) => `translate(${projected_stops[i][0]},${projected_stops[i][1]})`)
+    .on('click', (event) => {
+      // TODO pause interaction
+    });
 
   // interaction
   let transform;
   const zoom = d3.zoom().on("zoom", event => {
     transform = event.transform;
     svg.attr("transform", transform);
+    // TODO make all markers stay the same size
   });
   d3.select('svg')
     .call(zoom)
@@ -165,6 +169,9 @@ Promise.all(promises).then((data) => {
       const p = delaunay.find(mx, my);
 
       show_reaches(p);
+    })
+    .on("click", (event) => {
+      // TODO resume interaction
     });
 
   // init from a random stop
