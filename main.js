@@ -12,12 +12,14 @@ const desc_stop_name = d3.select('#stop-name');
 const desc_bus_number = d3.select('#bus-number');
 const desc_reaches = d3.select('#reaches');
 
-let width = 1000;
-let height = 700;
+let width = Math.min(1000, window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
+let height = Math.min(1000, (window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight) - 150);
 let svg = d3.select('svg')
   .attr('width', width)
-  .attr('height', height);
+  .attr('height', height)
+  .append('g');
 
+let svg_stops;
 let projected_stops;
 let voronoi;
 let show_reaches = (p) => {
@@ -27,7 +29,7 @@ let show_reaches = (p) => {
   let stop = projected_stops[p];
   neighbors.forEach((n) => {
     let neighbor = projected_stops[n];
-    if (Math.hypot(neighbor[0] - stop[0], neighbor[0] - stop[1]) < 20) {
+    if (Math.hypot(neighbor[0] - stop[0], neighbor[0] - stop[1]) < 10) { // NOTE distance in screen space (pixels)
       all.push(n);
     }
   });
@@ -42,7 +44,7 @@ let show_reaches = (p) => {
       .attr('fill', '#090');
   }
 
-  svg.selectAll('.stop')
+  svg_stops
     .attr('stroke', 'none')
     .attr('fill', '#000')
     .attr('r', 1);
@@ -51,7 +53,7 @@ let show_reaches = (p) => {
   let reaches = new Set();
   all.forEach((x) => {
     stops[x].bus_ids.forEach((bus_id) => bus_ids.add(bus_id));
-    
+
     stops[x].stop_reaches.forEach((stop_id) => {
       reaches.add(stop_id);
 
@@ -138,7 +140,7 @@ Promise.all(promises).then((data) => {
   // bus stops
   // svg.append('path')
   //   .attr('d', delaunay.renderPoints(null, 1));
-  svg.selectAll('.stop')
+  svg_stops = svg.selectAll('.stop')
     .data(stops)
     .enter().append('circle')
       .classed('stop', true)
@@ -149,13 +151,22 @@ Promise.all(promises).then((data) => {
       // .attr('r', d => Math.sqrt(d.stop_reaches.size)/10)
       .attr('transform', (d, i) => `translate(${projected_stops[i][0]},${projected_stops[i][1]})`);
 
-  // voronoi interaction
-  svg.on("mousemove", (event) => {
-    const [mx, my] = d3.pointer(event);
-    const p = delaunay.find(mx, my);
-
-    show_reaches(p);
+  // interaction
+  let transform;
+  const zoom = d3.zoom().on("zoom", event => {
+    transform = event.transform;
+    svg.attr("transform", transform);
   });
+  d3.select('svg')
+    .call(zoom)
+    .call(zoom.transform, d3.zoomIdentity)
+    .on("mousemove", (event) => {
+      const [mx, my] = transform.invert(d3.pointer(event));
+      const p = delaunay.find(mx, my);
 
+      show_reaches(p);
+    });
+
+  // init from a random stop
   show_reaches(d3.randomInt(stops.length)())
 });
