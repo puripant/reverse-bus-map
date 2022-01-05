@@ -5,6 +5,11 @@ let promises = [];
 files.forEach((url) => {
   promises.push(d3.json(url))
 });
+let stops;
+
+const desc_stop_name = d3.select('#stop-name');
+const desc_bus_number = d3.select('#bus-number');
+const desc_stop_number = d3.select('#stop-number');
 
 let width = 1000;
 let height = 700;
@@ -12,8 +17,29 @@ let svg = d3.select('svg')
   .attr('width', width)
   .attr('height', height);
 
+let show_reaches = (p) => {
+  svg.selectAll('.stop')
+    .attr('stroke', 'none')
+    .attr('fill', '#000')
+    .attr('r', 1);
+  stops[p].stop_reaches.forEach((stop_id) => {
+    svg.select(`#stop-${stop_id}`)
+      .attr('fill', '#E60268')
+      .attr('r', 2);
+  });
+  svg.select(`#stop-${stops[p].id}`)
+    .raise()
+    .attr('stroke', '#fff')
+    .attr('fill', '#E60268')
+    .attr('r', 5);
+  
+  desc_stop_name.text(stops[p].stop_name);
+  desc_bus_number.text(stops[p].bus_ids.length);
+  desc_stop_number.text(stops[p].stop_reaches.size);
+}
+
 Promise.all(promises).then((data) => {
-  let stops = data[0];
+  stops = data[0];
   let bangkok = data[1];
 
   let busses = {}
@@ -112,20 +138,8 @@ Promise.all(promises).then((data) => {
     // let neighbor = projected_stops[n];
     // Math.hypot(neighbor[0] - stop[0], neighbor[0] - stop[1]) < radius
 
-    svg.selectAll('.stop')
-      .attr('stroke', 'none')
-      .attr('fill', '#000')
-      .attr('r', 1);
-    stops[p].stop_reaches.forEach((stop_id) => {
-      svg.select(`#stop-${stop_id}`)
-        .attr('fill', '#E60268')
-        .attr('r', 2);
-    });
-    svg.select(`#stop-${stops[p].id}`)
-      .raise()
-      .attr('stroke', '#fff')
-      .attr('fill', '#E60268')
-      .attr('r', 5);
-    console.log(`ป้ายรถเมล์ ${stops[p].stop_name} มีรถเมล์ผ่าน ${stops[p].bus_ids.length} สาย ไปได้ ${stops[p].stop_reaches.size} ป้าย`);
-  })
+    show_reaches(p);
+  });
+  
+  show_reaches(d3.randomInt(stops.length)())
 });
