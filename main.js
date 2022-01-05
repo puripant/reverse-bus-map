@@ -8,8 +8,9 @@ files.forEach((url) => {
 let stops;
 
 const desc_stop_name = d3.select('#stop-name');
+// const desc_stop_number = d3.select('#stop-number');
 const desc_bus_number = d3.select('#bus-number');
-const desc_stop_number = d3.select('#stop-number');
+const desc_reaches = d3.select('#reaches');
 
 let width = 1000;
 let height = 700;
@@ -17,25 +18,58 @@ let svg = d3.select('svg')
   .attr('width', width)
   .attr('height', height);
 
+let projected_stops;
+let voronoi;
 let show_reaches = (p) => {
+  // check if neighbors are within range
+  let neighbors = [...voronoi.neighbors(p)];
+  let all = [p];
+  let stop = projected_stops[p];
+  neighbors.forEach((n) => {
+    let neighbor = projected_stops[n];
+    if (Math.hypot(neighbor[0] - stop[0], neighbor[0] - stop[1]) < 20) {
+      all.push(n);
+    }
+  });
+  if (debug) {
+    svg.selectAll('.voronoi')
+      .attr('fill', 'none');
+    all.forEach((x) => {
+      svg.select(`.voronoi-${x}`)
+        .attr('fill', '#009');
+    });
+    svg.select(`.voronoi-${p}`)
+      .attr('fill', '#090');
+  }
+
   svg.selectAll('.stop')
     .attr('stroke', 'none')
     .attr('fill', '#000')
     .attr('r', 1);
-  stops[p].stop_reaches.forEach((stop_id) => {
-    svg.select(`#stop-${stop_id}`)
-      .attr('fill', '#E60268')
-      .attr('r', 2);
-  });
-  svg.select(`#stop-${stops[p].id}`)
-    .raise()
-    .attr('stroke', '#fff')
-    .attr('fill', '#E60268')
-    .attr('r', 5);
   
-  desc_stop_name.text(stops[p].stop_name);
-  desc_bus_number.text(stops[p].bus_ids.length);
-  desc_stop_number.text(stops[p].stop_reaches.size);
+  let bus_ids = new Set();
+  let reaches = new Set();
+  all.forEach((x) => {
+    stops[x].bus_ids.forEach((bus_id) => bus_ids.add(bus_id));
+    
+    stops[x].stop_reaches.forEach((stop_id) => {
+      reaches.add(stop_id);
+
+      svg.select(`#stop-${stop_id}`)
+        .attr('fill', '#E60268')
+        .attr('r', 2);
+    });
+    svg.select(`#stop-${stops[x].id}`)
+      .raise()
+      .attr('stroke', '#fff')
+      .attr('fill', '#E60268')
+      .attr('r', 5);
+  });
+
+  desc_stop_name.text(stops[all[0]].stop_name);
+  // desc_stop_number.text(all.length - 1);
+  desc_bus_number.text(bus_ids.size);
+  desc_reaches.text(reaches.size);
 }
 
 Promise.all(promises).then((data) => {
@@ -74,9 +108,9 @@ Promise.all(promises).then((data) => {
       .attr('fill', '#ccc')
       .attr('d', path);
 
-  const projected_stops = stops.map(d => projection([d.longitude, d.latitude]));
+  projected_stops = stops.map(d => projection([d.longitude, d.latitude]));
   let delaunay = d3.Delaunay.from(projected_stops);
-  let voronoi = delaunay.voronoi([0, 0, width, height]);
+  voronoi = delaunay.voronoi([0, 0, width, height]);
   let cells = stops.map((d, i) => [d, voronoi.cellPolygon(i)]);
 
   // voronoi
@@ -120,26 +154,8 @@ Promise.all(promises).then((data) => {
     const [mx, my] = d3.pointer(event);
     const p = delaunay.find(mx, my);
 
-    if (debug) {
-      svg.selectAll('.voronoi')
-        .attr('fill', 'none');
-      svg.select(`.voronoi-${p}`)
-        .attr('fill', '#090');
-
-      let neighbors = [...voronoi.neighbors(p)];
-      neighbors.forEach((n) => {
-        svg.select(`.voronoi-${n}`)
-          .attr('fill', '#009');
-      });
-    }
-
-    // TODO check if neighbors are within range
-    // let stop = projected_stops[p];
-    // let neighbor = projected_stops[n];
-    // Math.hypot(neighbor[0] - stop[0], neighbor[0] - stop[1]) < radius
-
     show_reaches(p);
   });
-  
+
   show_reaches(d3.randomInt(stops.length)())
 });
