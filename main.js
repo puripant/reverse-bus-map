@@ -20,7 +20,14 @@ let svg = d3.select('svg')
   .append('g');
 
 let transform;
-let stop_r = (r) => transform ? r / Math.sqrt(transform.k) : r;
+let stop_r = (d, r) => {
+  if (debug) {
+    return d.bus_ids ? Math.sqrt(d.stop_reaches.size)/10 / (transform ? Math.sqrt(transform.k) : 1) : 0;
+    // return d.bus_ids ? Math.sqrt(d.bus_ids.length)/2 / (transform ? Math.sqrt(transform.k) : 1) : 0;
+  } else {
+    return r / (transform ? Math.sqrt(transform.k) : 1);
+  }
+}
 
 let svg_stops;
 let projected_stops;
@@ -66,7 +73,7 @@ let show_reaches = (p) => {
   svg_stops
     .attr('stroke', 'none')
     .attr('fill', '#000')
-    .attr('r', stop_r(1));
+    .attr('r', d => stop_r(d, 1));
   
   let bus_ids = new Set();
   let reaches = new Set();
@@ -78,14 +85,14 @@ let show_reaches = (p) => {
 
       svg.select(`#stop-${stop_id}`)
         .attr('fill', '#E60268')
-        .attr('r', stop_r(2));
+        .attr('r', d => stop_r(d, 2));
     });
     svg.select(`#stop-${stops[x].id}`)
       .raise()
       .attr('stroke', '#fff')
       .attr('stroke-width', stop_r(1))
       .attr('fill', '#E60268')
-      .attr('r', stop_r(5));
+      .attr('r', d => stop_r(d, 5));
   });
 
   desc_stop_name.text(stops[all[0]].stop_name);
@@ -166,9 +173,7 @@ Promise.all(promises).then((data) => {
       .classed('stop', true)
       .attr('id', (d) => `stop-${d.id}`)
       .attr('fill', '#000')
-      .attr('r', stop_r(1))
-      // .attr('r', d => Math.sqrt(d.bus_ids.length)/2)
-      // .attr('r', d => Math.sqrt(d.stop_reaches.size)/10)
+      .attr('r', d => stop_r(d, 1))
       .attr('transform', (d, i) => `translate(${projected_stops[i][0]},${projected_stops[i][1]})`)
     .on('click', (event) => {
       pause = true;
