@@ -26,9 +26,17 @@ let svg_stops;
 let projected_stops;
 let voronoi;
 let delaunay;
+let pause = false;
+let pause_p;
 let mousemove = (event) => {
-  const [mx, my] = transform.invert(d3.pointer(event));
-  const p = delaunay.find(mx, my);
+  let p;
+  if (pause) {
+    p = pause_p;
+  } else {
+    const [mx, my] = transform.invert(d3.pointer(event));
+    p = delaunay.find(mx, my);
+    pause_p = p;
+  }
   if (p != -1) {
     show_reaches(p);
   }
@@ -163,7 +171,8 @@ Promise.all(promises).then((data) => {
       // .attr('r', d => Math.sqrt(d.stop_reaches.size)/10)
       .attr('transform', (d, i) => `translate(${projected_stops[i][0]},${projected_stops[i][1]})`)
     .on('click', (event) => {
-      // TODO pause interaction
+      pause = true;
+      event.stopPropagation();
     });
 
   // interaction
@@ -178,7 +187,7 @@ Promise.all(promises).then((data) => {
     .call(zoom.transform, d3.zoomIdentity)
     .on('mousemove', mousemove)
     .on('click', (event) => {
-      // TODO resume interaction
+      pause = false;
     });
 
   // init from a random stop
