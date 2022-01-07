@@ -19,9 +19,20 @@ let svg = d3.select('svg')
   .attr('height', height)
   .append('g');
 
+let transform;
+let stop_r = (r) => transform ? r / Math.sqrt(transform.k) : r;
+
 let svg_stops;
 let projected_stops;
 let voronoi;
+let delaunay;
+let mousemove = (event) => {
+  const [mx, my] = transform.invert(d3.pointer(event));
+  const p = delaunay.find(mx, my);
+  if (p != -1) {
+    show_reaches(p);
+  }
+}
 let show_reaches = (p) => {
   // check if neighbors are within range
   let neighbors = [...voronoi.neighbors(p)];
@@ -47,7 +58,7 @@ let show_reaches = (p) => {
   svg_stops
     .attr('stroke', 'none')
     .attr('fill', '#000')
-    .attr('r', 1);
+    .attr('r', stop_r(1));
   
   let bus_ids = new Set();
   let reaches = new Set();
@@ -59,13 +70,14 @@ let show_reaches = (p) => {
 
       svg.select(`#stop-${stop_id}`)
         .attr('fill', '#E60268')
-        .attr('r', 2);
+        .attr('r', stop_r(2));
     });
     svg.select(`#stop-${stops[x].id}`)
       .raise()
       .attr('stroke', '#fff')
+      .attr('stroke-width', stop_r(1))
       .attr('fill', '#E60268')
-      .attr('r', 5);
+      .attr('r', stop_r(5));
   });
 
   desc_stop_name.text(stops[all[0]].stop_name);
@@ -111,7 +123,7 @@ Promise.all(promises).then((data) => {
       .attr('d', path);
 
   projected_stops = stops.map(d => projection([d.longitude, d.latitude]));
-  let delaunay = d3.Delaunay.from(projected_stops);
+  delaunay = d3.Delaunay.from(projected_stops);
   voronoi = delaunay.voronoi([0, 0, width, height]);
   let cells = stops.map((d, i) => [d, voronoi.cellPolygon(i)]);
 
@@ -146,7 +158,7 @@ Promise.all(promises).then((data) => {
       .classed('stop', true)
       .attr('id', (d) => `stop-${d.id}`)
       .attr('fill', '#000')
-      .attr('r', 1)
+      .attr('r', stop_r(1))
       // .attr('r', d => Math.sqrt(d.bus_ids.length)/2)
       // .attr('r', d => Math.sqrt(d.stop_reaches.size)/10)
       .attr('transform', (d, i) => `translate(${projected_stops[i][0]},${projected_stops[i][1]})`)
@@ -155,22 +167,17 @@ Promise.all(promises).then((data) => {
     });
 
   // interaction
-  let transform;
-  const zoom = d3.zoom().on("zoom", event => {
+  const zoom = d3.zoom().on('zoom', (event) => {
     transform = event.transform;
-    svg.attr("transform", transform);
-    // TODO make all markers stay the same size
+    svg.attr('transform', transform);
+    
+    mousemove(event)
   });
   d3.select('svg')
     .call(zoom)
     .call(zoom.transform, d3.zoomIdentity)
-    .on("mousemove", (event) => {
-      const [mx, my] = transform.invert(d3.pointer(event));
-      const p = delaunay.find(mx, my);
-
-      show_reaches(p);
-    })
-    .on("click", (event) => {
+    .on('mousemove', mousemove)
+    .on('click', (event) => {
       // TODO resume interaction
     });
 
