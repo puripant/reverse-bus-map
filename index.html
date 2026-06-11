@@ -39,15 +39,26 @@
       <div class="logo boonmeelab"><a href="https://www.boonmeelab.com"><span></span></a></div>
     </div> -->
   </div>
+  <div id="search">
+    <input id="search-input" type="text" placeholder="🔍 ค้นหาสายรถเมล์ หรือชื่อป้าย" autocomplete="off" />
+    <div id="suggestions"></div>
+  </div>
   <div id="desc">
-    ป้ายรถเมล์ <span id="stop-name"></span> และป้ายข้างเคียง
-    <!-- <span id="stop-number"></span> ป้าย -->
-    มีรถเมล์ผ่าน <span id="bus-number"></span> สาย 
-    ไปได้ <span id="reaches"></span> ป้าย
+    <span id="desc-stop">
+      ป้ายรถเมล์ <span id="stop-name"></span> และป้ายข้างเคียง
+      <!-- <span id="stop-number"></span> ป้าย -->
+      มีรถเมล์ผ่าน <span id="bus-number"></span> สาย
+      ไปได้ <span id="reaches"></span> ป้าย
+    </span>
+    <span id="desc-bus" style="display: none;">
+      รถเมล์สาย <span id="bus-name"></span>
+      ผ่าน <span id="bus-stops"></span> ป้าย
+    </span>
   </div>
   <div id="main">
     <svg></svg>
   </div>
+  <div id="tooltip"></div>
 
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="main.js"></script>

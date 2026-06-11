@@ -23,6 +23,71 @@ body {
   background-color: #E60268;
   color: white;
 }
+#desc #desc-stop, #desc #desc-bus {
+  background-color: transparent;
+  color: inherit;
+}
+
+#search {
+  position: absolute;
+  right: max(10px, calc((100% - 1000px) / 2 + 10px));
+  z-index: 2;
+  width: 220px;
+}
+@media (max-width: 700px) {
+  #search {
+    position: static;
+    width: auto;
+    margin: 0 10px;
+  }
+}
+#search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font-family: sans-serif;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  background-color: white;
+  outline: none;
+}
+#search input:focus {
+  border-color: #E60268;
+}
+#suggestions {
+  display: none;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.suggestion {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.suggestion:hover, .suggestion.active {
+  background-color: #E60268;
+  color: white;
+}
+.suggestion small {
+  opacity: 0.6;
+}
+
+#tooltip {
+  display: none;
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  padding: 5px 8px;
+  background-color: white;
+  border: 1px solid #E60268;
+  font-size: 13px;
+  max-width: 220px;
+}
+#tooltip .buses {
+  color: #E60268;
+}
 #main {
   width: 100%;
   margin: 0 auto;
